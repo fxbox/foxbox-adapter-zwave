@@ -1,0 +1,8 @@
+[package]
+name = "foxbox-adapter-zwave-example"
+version = "0.1.0"
+authors = ["Julien Wajsberg <felash@gmail.com>"]
+
+[dependencies]
+"openzwave" = { git = "https://github.com/fxbox/openzwave-rust" }
+
