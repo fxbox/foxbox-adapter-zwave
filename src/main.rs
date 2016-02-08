@@ -1,9 +1,9 @@
 extern crate openzwave;
-use openzwave::manager;
+use openzwave::options;
 
 fn main() {
-    manager::options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0");
-    manager::options::get().lock().unwrap();
-    manager::options::destroy().unwrap();
+    options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0");
+    options::get().lock().unwrap();
+    options::destroy().unwrap();
     println!("Hello, world!");
 }
