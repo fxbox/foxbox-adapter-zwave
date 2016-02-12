@@ -1,5 +1,5 @@
 extern crate openzwave;
-use openzwave::{options, manager};
+use openzwave::{options, manager, notification};
 use std::time::Duration;
 use std::thread;
 use std::fs;
@@ -31,7 +31,7 @@ fn main() {
     options::get().unwrap().lock().unwrap();
     let mut manager = manager::create().unwrap();
     let mut watcher = manager::Watcher::new(
-        |notification: manager::Notification| println!("{}", notification.a)
+        |notification: notification::Notification| println!("{:?}", notification)
     );
 
     manager.add_watcher(&mut watcher).unwrap();
@@ -40,7 +40,8 @@ fn main() {
         let arg_device = std::env::args()
             .skip(1).last(); // last but not first
 
-        let device = arg_device.as_ref().map(String::as_ref).or(get_default_device()).unwrap();
+        // TODO use a match to make this more readable
+        let device = arg_device.as_ref().map(String::as_ref).or(get_default_device()).expect("No device found.");
 
         println!("found device {}", device);
 
