@@ -37,9 +37,9 @@ fn main() {
             .skip(1).last(); // last but not first
 
         let device = match arg_device {
-            Some(ref x) => Some(x as &str),
-            None => get_default_device()
-        }.expect("No device found.");
+            Some(ref x) => x as &str,
+            None => get_default_device().expect("No device found.")
+        };
 
         println!("found device {}", device);
 
