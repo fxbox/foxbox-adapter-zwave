@@ -22,10 +22,6 @@ fn get_default_device() -> Option<&'static str> {
         .map(|&str| str)
 }
 
-fn is_device_usb(device_name: &str) -> bool {
-    device_name.to_lowercase().contains("usb")
-}
-
 fn main() {
     options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0").unwrap();
     options::get().unwrap().lock().unwrap();
@@ -37,11 +33,13 @@ fn main() {
     manager.add_watcher(&mut watcher).unwrap();
 
     {
-        let arg_device = std::env::args()
+        let arg_device: Option<String> = std::env::args()
             .skip(1).last(); // last but not first
 
-        // TODO use a match to make this more readable
-        let device = arg_device.as_ref().map(String::as_ref).or(get_default_device()).expect("No device found.");
+        let device = match arg_device {
+            Some(ref x) => Some(x as &str),
+            None => get_default_device()
+        }.expect("No device found.");
 
         println!("found device {}", device);
 
