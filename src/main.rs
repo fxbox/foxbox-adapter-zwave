@@ -23,9 +23,8 @@ fn get_default_device() -> Option<&'static str> {
 }
 
 fn main() {
-    options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0").unwrap();
-    options::get().unwrap().lock().unwrap();
-    let mut manager = manager::create().unwrap();
+    let mut options = options::Options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0").unwrap();
+    let mut manager = manager::Manager::create(options).unwrap();
     let mut watcher = manager::Watcher::new(
         |notification: notification::Notification| println!("{:?}", notification)
     );
@@ -52,7 +51,5 @@ fn main() {
     thread::sleep(Duration::from_secs(10));
 
     manager.remove_watcher(&mut watcher).unwrap();
-    manager::destroy();
-    options::destroy().unwrap();
     println!("Hello, world!");
 }
