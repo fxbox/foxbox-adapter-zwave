@@ -1,8 +1,7 @@
 extern crate openzwave;
 use openzwave::{options, manager, notification};
 use std::time::Duration;
-use std::thread;
-use std::fs;
+use std::{fs, thread, io};
 
 #[cfg(windows)]
 fn get_default_device() {
@@ -48,7 +47,9 @@ fn main() {
         }.unwrap()
     }
 
-    thread::sleep(Duration::from_secs(10));
+
+    let mut input = String::new();
+    io::stdin().read_line(&mut input).unwrap();
 
     manager.remove_watcher(&mut watcher).unwrap();
     println!("Hello, world!");
