@@ -23,6 +23,12 @@ fn get_default_device() -> Option<&'static str> {
 
 fn main() {
     let mut options = options::Options::create("./config/", "", "--SaveConfiguration=true --DumpTriggerLevel=0").unwrap();
+
+    // TODO: The NetworkKey should really be derived from something unique
+    //       about the foxbox that we're running on. This particular set of
+    //       values happens to be the default that domoticz uses.
+    options::Options::add_option_string(&mut options, "NetworkKey", "0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10", false).unwrap();
+
     let mut manager = manager::Manager::create(options).unwrap();
     let mut watcher = manager::Watcher::new(
         |notification: notification::Notification| println!("{:?}", notification)
