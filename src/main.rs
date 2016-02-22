@@ -14,6 +14,7 @@ fn get_default_device() {
 fn get_default_device() -> Option<&'static str> {
     let default_devices = [
         "/dev/cu.usbserial", // MacOS X
+        "/dev/cu.SLAB_USBtoUART", // MacOS X
         "/dev/ttyUSB0" // Linux
     ];
 
