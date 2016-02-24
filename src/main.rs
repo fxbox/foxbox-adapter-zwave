@@ -4,6 +4,7 @@ use std::time::Duration;
 use std::{fs, thread, io};
 use std::sync::Mutex;
 use std::collections::HashMap;
+use std::io::Write;
 
 #[cfg(windows)]
 fn get_default_device() {
@@ -87,8 +88,13 @@ fn main() {
     }
 
 
-    println!("Press ENTER to exit.");
+    println!("Enter `exit` to exit.");
     let mut input = String::new();
-    io::stdin().read_line(&mut input).unwrap();
+    while input.trim() != "exit" {
+        input.clear();
+        print!("> ");
+        io::stdout().flush(); // https://github.com/rust-lang/rust/issues/23818
+        io::stdin().read_line(&mut input).ok();
+    }
     println!("Exiting...");
 }
