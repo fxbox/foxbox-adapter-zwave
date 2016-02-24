@@ -1,7 +1,6 @@
 extern crate openzwave;
 use openzwave::{options, manager, notification, controller};
-use std::time::Duration;
-use std::{fs, thread, io};
+use std::{fs, io};
 use std::sync::Mutex;
 use std::collections::HashMap;
 use std::io::Write;
@@ -66,7 +65,7 @@ fn main() {
     options::Options::add_option_string(&mut options, "NetworkKey", "0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F, 0x10", false).unwrap();
 
     let mut manager = manager::Manager::create(options).unwrap();
-    let mut program = Program::new();
+    let program = Program::new();
 
     manager.add_watcher(program).unwrap();
 
@@ -93,7 +92,7 @@ fn main() {
     while input.trim() != "exit" {
         input.clear();
         print!("> ");
-        io::stdout().flush(); // https://github.com/rust-lang/rust/issues/23818
+        io::stdout().flush().unwrap(); // https://github.com/rust-lang/rust/issues/23818
         io::stdin().read_line(&mut input).ok();
     }
     println!("Exiting...");
