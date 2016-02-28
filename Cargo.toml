@@ -1,5 +1,5 @@
 [package]
-name = "foxbox-adapter-zwave-example"
+name = "openzwave-rust-example"
 version = "0.1.0"
 authors = ["Julien Wajsberg <felash@gmail.com>"]
 
