@@ -1,5 +1,6 @@
 extern crate openzwave;
 use openzwave::{options, manager, notification, controller};
+use openzwave::notification::*;
 use std::{fs, io};
 use std::sync::Mutex;
 use std::collections::HashMap;
@@ -37,22 +38,35 @@ impl Program {
 }
 
 impl manager::NotificationWatcher for Program {
-    fn on_notification(&self, notification: notification::Notification) {
-        println!("{:?}", notification);
+    fn on_notification(&self, notification: Notification) {
+        //println!("Received notification: {:?}", notification);
 
-        let home_id = notification.get_home_id();
-        {
-            let mut controllers = self.controllers.lock().unwrap();
-            if !controllers.contains_key(&home_id) {
-                let controller = controller::Controller::new(home_id).unwrap();
-                println!("Found new controller: {:?}", controller);
-                controllers.insert(home_id, controller);
+        match notification.get_type() {
+            NotificationType::Type_DriverReady => {
+                let home_id = notification.get_home_id();
+                let mut controllers = self.controllers.lock().unwrap();
+                if !controllers.contains_key(&home_id) {
+                    let controller = controller::Controller::new(home_id).unwrap();
+                    println!("Found new controller: {:?}", controller);
+                    controllers.insert(home_id, controller);
+                }
+            },
+            NotificationType::Type_NodeAdded => {
+                let node = notification.get_node();
+                println!("Added new node: {:?}", node);
+            },
+            NotificationType::Type_ValueAdded => {
+                let value = notification.get_value_id();
+                println!("Value added: {:?}", value);
+            },
+            NotificationType::Type_ValueChanged => {
+                let value = notification.get_value_id();
+                println!("Value changed: {:?}", value);
+            },
+            _ => {
+                //println!("Unknown notification: {:?}", notification);
             }
         }
-
-
-
-
     }
 }
 
