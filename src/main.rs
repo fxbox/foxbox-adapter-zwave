@@ -1,9 +1,10 @@
 extern crate openzwave;
 use openzwave::{options, manager, notification, controller};
 use openzwave::notification::*;
+use openzwave::node::*;
 use std::{fs, io};
 use std::sync::Mutex;
-use std::collections::HashMap;
+use std::collections::{ HashMap, HashSet };
 use std::io::Write;
 
 #[cfg(windows)]
@@ -25,14 +26,30 @@ fn get_default_device() -> Option<&'static str> {
         .map(|&str| str)
 }
 
+struct ProgramState {
+    controllers: HashSet<controller::Controller>,
+    nodes: HashSet<Node>,
+    nodes_map: HashMap<controller::Controller, Vec<Node>>,
+}
+
+impl ProgramState {
+    fn new() -> ProgramState {
+        ProgramState {
+            controllers: HashSet::new(),
+            nodes: HashSet::new(),
+            nodes_map: HashMap::new()
+        }
+    }
+}
+
 struct Program {
-    controllers: Mutex<HashMap<u32, controller::Controller>>
+    state: Mutex<ProgramState>
 }
 
 impl Program {
     pub fn new() -> Program {
         Program {
-            controllers: Mutex::new(HashMap::new())
+            state: Mutex::new(ProgramState::new())
         }
     }
 }
@@ -43,17 +60,24 @@ impl manager::NotificationWatcher for Program {
 
         match notification.get_type() {
             NotificationType::Type_DriverReady => {
-                let home_id = notification.get_home_id();
-                let mut controllers = self.controllers.lock().unwrap();
-                if !controllers.contains_key(&home_id) {
-                    let controller = controller::Controller::new(home_id).unwrap();
+                let controller = notification.get_controller();
+                let mut state = self.state.lock().unwrap();
+                if !state.controllers.contains(&controller) {
                     println!("Found new controller: {:?}", controller);
-                    controllers.insert(home_id, controller);
+                    state.controllers.insert(controller);
                 }
             },
             NotificationType::Type_NodeAdded => {
                 let node = notification.get_node();
+                let controller = notification.get_controller();
                 println!("Added new node: {:?}", node);
+                {
+                    let mut state = self.state.lock().unwrap();
+                    state.nodes.insert(node);
+                    let nodes_vec = state.nodes_map.entry(controller).or_insert(Vec::new());
+                    nodes_vec.push(node);
+                }
+
             },
             NotificationType::Type_ValueAdded => {
                 let value = notification.get_value_id();
