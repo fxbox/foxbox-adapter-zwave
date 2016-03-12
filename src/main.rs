@@ -1,10 +1,11 @@
 extern crate openzwave;
-use openzwave::{options, manager, notification, controller};
+use openzwave::{options, manager, controller};
 use openzwave::notification::*;
 use openzwave::node::*;
+use openzwave::value_classes::value_id::{ ValueGenre, ValueID };
 use std::{fs, io};
-use std::sync::Mutex;
-use std::collections::{ HashMap, HashSet };
+use std::sync::{ Arc, Mutex };
+use std::collections::{ BTreeSet, HashMap, HashSet };
 use std::io::Write;
 
 #[cfg(windows)]
@@ -17,7 +18,8 @@ fn get_default_device() -> Option<&'static str> {
     let default_devices = [
         "/dev/cu.usbserial", // MacOS X
         "/dev/cu.SLAB_USBtoUART", // MacOS X
-        "/dev/ttyUSB0" // Linux
+        "/dev/ttyUSB0", // Linux
+        "/dev/ttyACM0"  // Linux (Aeotech Z-Stick Gen-5)
     ];
 
     default_devices
@@ -26,30 +28,56 @@ fn get_default_device() -> Option<&'static str> {
         .map(|&str| str)
 }
 
+#[derive(Debug, Clone)]
 struct ProgramState {
     controllers: HashSet<controller::Controller>,
-    nodes: HashSet<Node>,
-    nodes_map: HashMap<controller::Controller, Vec<Node>>,
+    nodes: BTreeSet<Node>,
+    nodes_map: HashMap<controller::Controller, BTreeSet<Node>>,
+    value_ids: BTreeSet<ValueID>,
 }
 
 impl ProgramState {
     fn new() -> ProgramState {
         ProgramState {
             controllers: HashSet::new(),
-            nodes: HashSet::new(),
-            nodes_map: HashMap::new()
+            nodes: BTreeSet::new(),
+            nodes_map: HashMap::new(),
+            value_ids: BTreeSet::new()
         }
+    }
+
+    pub fn add_node(&mut self, node: Node) {
+        let node_set = self.nodes_map.entry(node.get_controller()).or_insert(BTreeSet::new());
+        node_set.insert(node);
+        self.nodes.insert(node);
+    }
+
+    pub fn remove_node(&mut self, node: Node) {
+        if let Some(node_set) = self.nodes_map.get_mut(&node.get_controller()) {
+            node_set.remove(&node);
+        }
+        self.nodes.remove(&node);
+    }
+
+    pub fn add_value_id(&mut self, value_id: ValueID) {
+        self.value_ids.insert(value_id.clone());
+        println!("Added value_id: {:?}", value_id);
+    }
+
+    pub fn remove_value_id(&mut self, value_id: ValueID) {
+        self.value_ids.remove(&value_id);
     }
 }
 
+#[derive(Debug, Clone)]
 struct Program {
-    state: Mutex<ProgramState>
+    state: Arc<Mutex<ProgramState>>
 }
 
 impl Program {
     pub fn new() -> Program {
         Program {
-            state: Mutex::new(ProgramState::new())
+            state: Arc::new(Mutex::new(ProgramState::new()))
         }
     }
 }
@@ -68,24 +96,38 @@ impl manager::NotificationWatcher for Program {
                 }
             },
             NotificationType::Type_NodeAdded => {
+                let mut state = self.state.lock().unwrap();
                 let node = notification.get_node();
-                let controller = notification.get_controller();
-                println!("Added new node: {:?}", node);
-                {
-                    let mut state = self.state.lock().unwrap();
-                    state.nodes.insert(node);
-                    let nodes_vec = state.nodes_map.entry(controller).or_insert(Vec::new());
-                    nodes_vec.push(node);
-                }
-
+                println!("NodeAdded: {:?}", node);
+                state.add_node(node);
+            },
+            NotificationType::Type_NodeRemoved => {
+                let mut state = self.state.lock().unwrap();
+                let node = notification.get_node();
+                println!("NodeRemoved: {:?}", node);
+                state.remove_node(node);
+            },
+            NotificationType::Type_NodeEvent => {
+                println!("NodeEvent");
             },
             NotificationType::Type_ValueAdded => {
-                let value = notification.get_value_id();
-                println!("Value added: {:?}", value);
+                let mut state = self.state.lock().unwrap();
+                let value_id = notification.get_value_id();
+                println!("ValueAdded: {:?}", value_id);
+                state.add_value_id(value_id);
             },
             NotificationType::Type_ValueChanged => {
-                let value = notification.get_value_id();
-                println!("Value changed: {:?}", value);
+                let mut state = self.state.lock().unwrap();
+                let value_id = notification.get_value_id();
+                println!("ValueChanged: {:?}", value_id);
+                state.add_value_id(value_id);
+                // TODO: Tell somebody that the value changed
+            },
+            NotificationType::Type_ValueRemoved => {
+                let mut state = self.state.lock().unwrap();
+                let value_id = notification.get_value_id();
+                println!("ValueRemoved: {:?}", value_id);
+                state.remove_value_id(value_id);
             },
             _ => {
                 //println!("Unknown notification: {:?}", notification);
@@ -105,7 +147,7 @@ fn main() {
     let mut manager = manager::Manager::create(options).unwrap();
     let program = Program::new();
 
-    manager.add_watcher(program).unwrap();
+    manager.add_watcher(program.clone()).unwrap();
 
     {
         let arg_device: Option<String> = std::env::args()
@@ -125,13 +167,72 @@ fn main() {
     }
 
 
-    println!("Enter `exit` to exit.");
+    println!("Enter `exit` (or Control-D) to exit.");
     let mut input = String::new();
-    while input.trim() != "exit" {
+    loop {
         input.clear();
         print!("> ");
         io::stdout().flush().unwrap(); // https://github.com/rust-lang/rust/issues/23818
-        io::stdin().read_line(&mut input).ok();
+        // Note: read_line includes the newline character.
+        if let Ok(n) = io::stdin().read_line(&mut input) {
+            if n == 0 {
+                // End-of-file (either Control-D or we were redirected).
+                break;
+            }
+        } else {
+            println!("Error reading stdin");
+            break;
+        }
+
+        let tokens:Vec<&str> = input.split_whitespace().collect();
+        if tokens.len() == 0 {
+            continue;
+        }
+        match tokens[0] {
+            "args" => {
+                println!("args = {:?}", tokens);
+            }
+            "exit" => {
+                break;
+            }
+            "controllers" => {
+                let ref controllers = program.state.lock().unwrap().controllers;
+                for controller in controllers {
+                    println!("{}", controller);
+                }
+            }
+            "controllers_dbg" => {
+                println!("{:?}\n", program.state.lock().unwrap().controllers);
+            }
+            "nodes" => {
+                let mut program_state = program.state.lock().unwrap();
+                let ref mut nodes_map = program_state.nodes_map;
+                for (ref controller, ref mut node_set) in nodes_map {
+                    println!("{}", controller);
+                    for node in node_set.iter() {
+                        println!("  Node: {}", node);
+                    }
+                }
+            }
+            "nodes_dbg" => {
+                println!("{:?}\n", program.state.lock().unwrap().nodes);
+            }
+            "values" => {
+                let ref value_ids = program.state.lock().unwrap().value_ids;
+                for value_id in value_ids {
+                    if value_id.get_genre() != ValueGenre::ValueGenre_User {
+                        continue;
+                    }
+                    println!("{}", value_id);
+                }
+            }
+            "values_dbg" => {
+                println!("{:?}", program.state.lock().unwrap().value_ids);
+            }
+            _ => {
+                println!("Unrecognized command: '{}'", tokens[0]);
+            }
+        }
     }
     println!("Exiting...");
 }
