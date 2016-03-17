@@ -212,8 +212,9 @@ fn main() {
             "nodes_dbg"             => println!("{:?}\n", program.state.lock().unwrap().nodes),
             "values"                => {
                 let ref value_ids = program.state.lock().unwrap().value_ids;
+                let display_all_values = tokens.get(1).unwrap_or(&"") == &"all";
                 for value_id in value_ids {
-                    if value_id.get_genre() != ValueGenre::ValueGenre_User {
+                    if !display_all_values && value_id.get_genre() != ValueGenre::ValueGenre_User {
                         continue;
                     }
                     println!("{}", value_id);
