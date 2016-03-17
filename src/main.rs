@@ -210,6 +210,28 @@ fn main() {
                 }
             },
             "nodes_dbg"             => println!("{:?}\n", program.state.lock().unwrap().nodes),
+            "set"                   => {
+                if tokens.len() != 4 {
+                    println!("Syntax: set <home_id> <value_id> <value>");
+                    continue;
+                }
+                match (u32::from_str_radix(tokens[1], 16), u64::from_str_radix(tokens[2], 16)) {
+                    (Ok(home_id), Ok(id)) => {
+                        let vid = ValueID::from_packed_id(home_id, id);
+                        let ref value_ids = program.state.lock().unwrap().value_ids;
+                        if value_ids.contains(&vid) {
+                            if vid.set_string(tokens[3]).is_err() {
+                                println!("Error setting value");
+                            }
+                        } else {
+                            println!("Unknown ValueID: {:08x} {:016x}", home_id, id);
+                        }
+                    }
+                    _ => {
+                        println!("Must specify a numeric home_id and value_id");
+                    }
+                }
+            }
             "values"                => {
                 let ref value_ids = program.state.lock().unwrap().value_ids;
                 for value_id in value_ids {
