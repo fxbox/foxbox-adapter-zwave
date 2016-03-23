@@ -1,9 +1,23 @@
 extern crate openzwave_stateful as openzwave;
 use openzwave::InitOptions;
-use openzwave::{ ValueGenre, ValueID };
+use openzwave::{ ValueGenre, ValueID, ZWaveNotification };
 
-use std::io;
+use std::{ io, thread };
 use std::io::Write;
+use std::sync::mpsc;
+
+fn display_prompt() {
+    print!("> ");
+    io::stdout().flush().unwrap(); // https://github.com/rust-lang/rust/issues/23818
+}
+
+fn spawn_notification_thread(rx: mpsc::Receiver<ZWaveNotification>) {
+    thread::spawn(move || {
+        for notification in rx {
+            println!("{}", notification);
+        }
+    });
+}
 
 fn main() {
 
@@ -11,14 +25,14 @@ fn main() {
         device: std::env::args().skip(1).last() // last but not first
     };
 
-    let ozw = openzwave::init(&options).unwrap();
+    let (ozw, rx) = openzwave::init(&options).unwrap();
+    spawn_notification_thread(rx);
 
     println!("Enter `exit` (or Control-D) to exit.");
     let mut input = String::new();
     loop {
         input.clear();
-        print!("> ");
-        io::stdout().flush().unwrap(); // https://github.com/rust-lang/rust/issues/23818
+        display_prompt();
         // Note: read_line includes the newline character.
         if let Ok(n) = io::stdin().read_line(&mut input) {
             if n == 0 {
