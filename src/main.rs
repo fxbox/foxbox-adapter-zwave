@@ -38,6 +38,22 @@ fn main() {
         match tokens[0] {
             "args"                  => println!("args = {:?}", tokens),
             "exit" | "q" | "quit"   => break,
+            "add-node" => {
+                if tokens.len() < 2 || tokens.len() > 3 {
+                    println!("Syntax: add-node <home_id> [secure]");
+                    continue;
+                }
+                if let Ok(home_id) = u32::from_str_radix(tokens[1], 16) {
+                    let secure = tokens.get(2).unwrap_or(&"") == &"secure";
+                    if ozw.add_node(home_id, secure).is_err() {
+                        println!("Error adding node");
+                    } else {
+                        println!("\nPress Include button on node you wish to add\n");
+                    }
+                } else {
+                    println!("Must specify a numeric home_id (in base 16)");
+                }
+            }
             "controllers"           => {
                 let state = ozw.get_state();
                 let controllers = state.get_controllers();
@@ -57,6 +73,21 @@ fn main() {
                 }
             },
             "nodes_dbg"             => println!("{:?}\n", ozw.get_state().get_nodes()),
+            "remove-node" => {
+                if tokens.len() != 2 {
+                    println!("Syntax: remove-node <home_id>");
+                    continue;
+                }
+                if let Ok(home_id) = u32::from_str_radix(tokens[1], 16) {
+                    if ozw.remove_node(home_id).is_err() {
+                        println!("Error removing node");
+                    } else {
+                        println!("\nPress Exclude button on node you wish to remove\n");
+                    }
+                } else {
+                    println!("Must specify a numeric home_id (in base 16)");
+                }
+            }
             "set"                   => {
                 if tokens.len() != 4 {
                     println!("Syntax: set <home_id> <value_id> <value>");
@@ -76,7 +107,7 @@ fn main() {
                         }
                     }
                     _ => {
-                        println!("Must specify a numeric home_id and value_id");
+                        println!("Must specify a numeric home_id and value_id (in base 16)");
                     }
                 }
             }
