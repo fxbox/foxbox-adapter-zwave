@@ -71,8 +71,8 @@ fn main() {
             "controllers"           => {
                 let state = ozw.get_state();
                 let controllers = state.get_controllers();
-                for controller in controllers {
-                    println!("{}", controller);
+                for (controller, info) in controllers {
+                    println!("{} {}", controller, info);
                 }
             },
             "controllers_dbg"       => println!("{:?}\n", ozw.get_state().get_controllers()),
@@ -80,7 +80,8 @@ fn main() {
                 let state = ozw.get_state();
                 let nodes_map = state.get_nodes_map();
                 for (controller, node_set) in nodes_map {
-                    println!("{}", controller);
+                    let info_str = state.get_controller_info(controller).map_or(String::from("???"), |info| info.to_string());
+                    println!("{} {}", controller, info_str);
                     for node in node_set.iter() {
                         println!("  Node: {}", node);
                     }
