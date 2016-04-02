@@ -1,0 +1,49 @@
+[root]
+name = "openzwave-rust-example"
+version = "0.1.0"
+dependencies = [
+ "openzwave-stateful 0.1.0 (git+https://github.com/fxbox/openzwave-stateful-rust)",
+]
+
+[[package]]
+name = "gcc"
+version = "0.3.24"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "itertools"
+version = "0.4.11"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "libc"
+version = "0.2.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "openzwave"
+version = "0.1.0"
+source = "git+https://github.com/fxbox/openzwave-rust#2a9a3075f03e30790329e6146670d9968850dc20"
+dependencies = [
+ "itertools 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+ "openzwave-sys 0.1.0 (git+https://github.com/fxbox/openzwave-rust)",
+]
+
+[[package]]
+name = "openzwave-stateful"
+version = "0.1.0"
+source = "git+https://github.com/fxbox/openzwave-stateful-rust#5acf6518b82942466eec342bfe93c133fcad1133"
+dependencies = [
+ "openzwave 0.1.0 (git+https://github.com/fxbox/openzwave-rust)",
+]
+
+[[package]]
+name = "openzwave-sys"
+version = "0.1.0"
+source = "git+https://github.com/fxbox/openzwave-rust#2a9a3075f03e30790329e6146670d9968850dc20"
+dependencies = [
+ "gcc 0.3.24 (registry+https://github.com/rust-lang/crates.io-index)",
+ "libc 0.2.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
