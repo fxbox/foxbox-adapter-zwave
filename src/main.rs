@@ -23,8 +23,8 @@ fn main() {
 
     let options = InitOptions {
         device: std::env::args().skip(1).last(), // last but not first
-        config_path: "./config/".to_string(),
-        user_path: "./config/".to_string(),
+        config_path: "./config/",
+        user_path: "./config/",
     };
 
     let (ozw, rx) = openzwave::init(&options).unwrap();
