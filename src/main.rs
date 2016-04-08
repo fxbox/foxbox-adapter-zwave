@@ -1,5 +1,5 @@
 extern crate openzwave_stateful as openzwave;
-use openzwave::InitOptions;
+use openzwave::{ ConfigPath, InitOptions };
 use openzwave::{ ValueGenre, ValueID, ZWaveNotification };
 
 use std::{ io, thread };
@@ -23,7 +23,7 @@ fn main() {
 
     let options = InitOptions {
         device: std::env::args().skip(1).last(), // last but not first
-        config_path: "./config/",
+        config_path: ConfigPath::Default,
         user_path: "./config/",
     };
 
