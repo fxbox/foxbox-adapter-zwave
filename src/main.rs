@@ -105,6 +105,10 @@ fn main() {
                     println!("Must specify a numeric home_id (in base 16)");
                 }
             }
+            "write_config"          => {
+                ozw.write_configs();
+                println!("Config written.");
+            }
             "set"                   => {
                 if tokens.len() != 4 {
                     println!("Syntax: set <home_id> <value_id> <value>");
