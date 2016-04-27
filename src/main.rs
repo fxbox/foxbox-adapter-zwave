@@ -128,6 +128,62 @@ fn main() {
                     }
                 }
             }
+            "test-network"          => {
+                if tokens.len() != 3 {
+                    println!("Syntax: test-network <home-id> <count>");
+                    continue;
+                }
+                match (u32::from_str_radix(tokens[1], 16), tokens[2].parse::<u32>()) {
+                    (Ok(home_id), Ok(count)) => {
+                        ozw.test_network(home_id, count);
+                    }
+                    _ => {
+                        println!("Must specify a numeric home_id (in base 16) and count (in base 10)");
+                    }
+                }
+            }
+            "test-node"          => {
+                if tokens.len() != 4 {
+                    println!("Syntax: test-network <home-id> <node_id> <count>");
+                    continue;
+                }
+                match (u32::from_str_radix(tokens[1], 16), u8::from_str_radix(tokens[2], 16), tokens[3].parse::<u32>()) {
+                    (Ok(home_id), Ok(node_id), Ok(count)) => {
+                        ozw.test_network_node(home_id, node_id, count);
+                    }
+                    _ => {
+                        println!("Must specify a numeric home_id, node_id (in base 16) and count (in base 10)");
+                    }
+                }
+            }
+            "heal-network"          => {
+                if tokens.len() != 2 {
+                    println!("Syntax: heal-network <home-id>");
+                    continue;
+                }
+                match u32::from_str_radix(tokens[1], 16) {
+                    Ok(home_id) => {
+                        ozw.heal_network(home_id, true);
+                    }
+                    _ => {
+                        println!("Must specify a numeric home_id (in base 16)");
+                    }
+                }
+            }
+            "heal-node"          => {
+                if tokens.len() != 3 {
+                    println!("Syntax: heal-network <home-id> <node_id>");
+                    continue;
+                }
+                match (u32::from_str_radix(tokens[1], 16), u8::from_str_radix(tokens[2], 16)) {
+                    (Ok(home_id), Ok(node_id)) => {
+                        ozw.heal_network_node(home_id, node_id, true);
+                    }
+                    _ => {
+                        println!("Must specify a numeric home_id and node_id (in base 16)");
+                    }
+                }
+            }
             "values"                => {
                 let state = ozw.get_state();
                 let value_ids = state.get_values();
