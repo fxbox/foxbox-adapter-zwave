@@ -4,5 +4,10 @@ version = "0.1.0"
 authors = ["Julien Wajsberg <felash@gmail.com>"]
 
 [dependencies]
-"openzwave-stateful" = { git = "https://github.com/fxbox/openzwave-stateful-rust" }
+env_logger = "0.3.2"
+libc = "0.2.7"
+log = "0.3"
+nix = { git = "https://github.com/nix-rust/nix.git", rev = "138080" } # Until 0.5.1 is released
+openzwave-stateful = { git = "https://github.com/fxbox/openzwave-stateful-rust" }
+time = "0.1"
 

@@ -1,8 +1,17 @@
+extern crate env_logger;
+extern crate libc;
+#[macro_use]
+extern crate log;
+extern crate nix;
 extern crate openzwave_stateful as openzwave;
+extern crate time;
+
+use env_logger::LogBuilder;
+use log::{ LogRecord, LogLevelFilter };
 use openzwave::{ ConfigPath, InitOptions };
 use openzwave::{ ValueGenre, ValueID, ZWaveNotification };
 
-use std::{ io, thread };
+use std::{ env, io, thread };
 use std::io::Write;
 use std::sync::mpsc;
 
@@ -19,7 +28,63 @@ fn spawn_notification_thread(rx: mpsc::Receiver<ZWaveNotification>) {
     });
 }
 
+#[cfg(any(target_os = "linux", target_os = "android"))]
+#[inline]
+fn tid_str() -> String {
+    // gettid only exists for the linux and android variants of nix
+    format!("({}) ", nix::unistd::gettid())
+}
+
+#[cfg(not(any(target_os = "linux", target_os = "android")))]
+#[inline]
+fn tid_str() -> &'static str {
+    ""
+}
+
 fn main() {
+
+    let mut builder = LogBuilder::new();
+    let istty = unsafe { libc::isatty(libc::STDERR_FILENO as i32) } != 0;
+    if istty {
+        // Colorized output formatter
+        let format = |record: &LogRecord| {
+            let t = time::now();
+            let level_color = match record.level() {
+                log::LogLevel::Error => "\x1b[1;31m",  // bold red
+                log::LogLevel::Warn  => "\x1b[1;33m",  // bold yellow
+                log::LogLevel::Info  => "\x1b[1;32m",  // bold green
+                log::LogLevel::Debug => "\x1b[1;34m",  // bold blue
+                log::LogLevel::Trace => "\x1b[1;35m"   // bold magenta
+            };
+            format!("[\x1b[90m{}.{:03}\x1b[0m] {}{}{:5}\x1b[0m {}",
+                time::strftime("%Y-%m-%d %H:%M:%S", &t).unwrap(),
+                t.tm_nsec / 1_000_000,
+                tid_str(),
+                level_color,
+                record.level(),
+                record.args()
+            )
+        };
+        builder.format(format).filter(None, LogLevelFilter::Info);
+    } else {
+        // Plain output formatter
+        let format = |record: &LogRecord| {
+            let t = time::now();
+            format!("{}.{:03} {}{:5} {}",
+                time::strftime("%Y-%m-%d %H:%M:%S", &t).unwrap(),
+                t.tm_nsec / 1_000_000,
+                tid_str(),
+                record.level(),
+                record.args()
+            )
+        };
+        builder.format(format).filter(None, LogLevelFilter::Info);
+    }
+
+    if env::var("RUST_LOG").is_ok() {
+       builder.parse(&env::var("RUST_LOG").unwrap());
+    }
+    builder.init().unwrap();
 
     let options = InitOptions {
         device: std::env::args().skip(1).last(), // last but not first
