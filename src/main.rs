@@ -21,8 +21,10 @@ fn spawn_notification_thread(rx: mpsc::Receiver<ZWaveNotification>) {
 
 fn main() {
 
+    let device_args:Vec<_> = std::env::args().skip(1).collect();  // skip program name
+
     let options = InitOptions {
-        device: std::env::args().skip(1).last(), // last but not first
+        devices: if device_args.len() == 0 { None } else { Some(device_args) },
         config_path: ConfigPath::Default,
         user_path: "./config/",
     };
