@@ -1,4 +1,6 @@
 extern crate openzwave_stateful as openzwave;
+extern crate env_logger;
+
 use openzwave::{ ConfigPath, InitOptions };
 use openzwave::{ ValueGenre, ValueID, ZWaveNotification };
 
@@ -20,6 +22,7 @@ fn spawn_notification_thread(rx: mpsc::Receiver<ZWaveNotification>) {
 }
 
 fn main() {
+    env_logger::init().unwrap();
 
     let device_args:Vec<_> = std::env::args().skip(1).collect();  // skip program name
 
